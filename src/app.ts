@@ -1,6 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import morgan from "morgan";
+import cors from "cors";
 import { PORT } from "./config";
 import taskRouter from "./task/task.router";
 
@@ -8,6 +9,7 @@ const app = express();
 
 app
   .use(morgan())
+  .use(cors())
   .use(bodyParser.json())
   .use(bodyParser.urlencoded({ extended: false }))
   .use("/tasks", taskRouter)
