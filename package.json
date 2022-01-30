@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && knex migrate:latest",
     "start": "node dist/app.js",
     "migrate": "knex migrate:latest",
     "dev": "tsc-watch --project . --outDir ./dist --onFirstSuccess \"nodemon ./dist/app.js\""
