@@ -2,7 +2,7 @@ import { addMilliseconds, parseISO, isBefore } from "date-fns";
 import TaskEntity from "./task.entity";
 import TaskExecutionEntity from "./taskExecution.entity";
 
-type TASK_TYPE = "IMMEDIATE" | "FUTURE" | "DAILY" | "WEEKLY";
+export type TASK_TYPE = "IMMEDIATE" | "FUTURE" | "DAILY" | "WEEKLY";
 
 export const taskTypes: TASK_TYPE[] = [
   "IMMEDIATE",
@@ -11,8 +11,8 @@ export const taskTypes: TASK_TYPE[] = [
   "WEEKLY",
 ];
 
-const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24;
-const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
+export const MILLISECONDS_IN_A_DAY = 1000 * 2;
+export const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
 
 class TaskService {
   constructor() {

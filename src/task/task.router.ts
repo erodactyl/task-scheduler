@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { NotFound } from "../utils/errors.js";
-import TaskService, { taskTypes } from "./task.service.js";
+import { taskTypes } from "./task.service.js";
 import validate from "../utils/validate";
+import TaskService from "./epheremeralTask.service";
 
 const taskRouter = Router();
 
