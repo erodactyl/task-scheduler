@@ -1,5 +1,5 @@
-import { Model } from "objection";
-import TaskEntity from "./task.entity";
+import { Model } from 'objection';
+import TaskEntity from './task.entity';
 
 export default class TaskExecutionEntity extends Model {
   id!: number;
@@ -11,13 +11,13 @@ export default class TaskExecutionEntity extends Model {
 
   static get jsonSchema() {
     return {
-      type: "object",
-      required: ["taskId", "executeOn"],
+      type: 'object',
+      required: ['taskId', 'executeOn'],
     };
   }
 
   static get tableName() {
-    return "task_executions";
+    return 'task_executions';
   }
 
   static relationMappings = () => ({

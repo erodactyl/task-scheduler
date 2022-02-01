@@ -1,17 +1,17 @@
-import { Router } from "express";
-import { body } from "express-validator";
-import { NotFound } from "../utils/errors.js";
-import { taskTypes } from "./task.service.js";
-import validate from "../utils/validate";
-import TaskService from "./epheremeralTask.service";
+import { Router } from 'express';
+import { body } from 'express-validator';
+import { NotFound } from '../utils/errors.js';
+import { taskTypes } from './task.service.js';
+import validate from '../utils/validate';
+import TaskService from './task.service';
 
 const taskRouter = Router();
 
 taskRouter
-  .get("/", async (req, res) => {
+  .get('/', async (req, res) => {
     res.status(200).json(await TaskService.getAllTasks());
   })
-  .get("/:id", async (req, res) => {
+  .get('/:id', async (req, res) => {
     const task = await TaskService.getTaskById(Number(req.params.id));
     if (!task) {
       throw new NotFound(`Task with id ${req.params.id} was not found`);
@@ -19,13 +19,13 @@ taskRouter
     res.status(200).json(task);
   })
   .post(
-    "/",
+    '/',
     validate([
       body(
-        "type",
-        "Type should be one of IMMEDIATE or FUTURE or DAILY or WEEKLY"
+        'type',
+        'Type should be one of IMMEDIATE or FUTURE or DAILY or WEEKLY'
       ).isIn(taskTypes),
-      body("timestamp").isInt().optional().toInt(),
+      body('timestamp').isInt().optional().toInt(),
     ]),
     async (req, res) => {
       const type = req.body.type;
@@ -37,9 +37,9 @@ taskRouter
       res.status(201).json(task);
     }
   )
-  .delete("/:id", async (req, res) => {
-    const tasksRemoved = await TaskService.removeTask(Number(req.params.id));
-    if (tasksRemoved === 0) {
+  .delete('/:id', async (req, res) => {
+    const taskRemoved = await TaskService.removeTask(Number(req.params.id));
+    if (!taskRemoved) {
       throw new NotFound(
         `No future executions for task ${req.params.id} exist`
       );

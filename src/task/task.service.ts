@@ -1,20 +1,19 @@
-import { addMilliseconds, parseISO, isBefore } from "date-fns";
-import TaskEntity from "./task.entity";
-import TaskExecutionEntity from "./taskExecution.entity";
+import { addMilliseconds, parseISO, isBefore } from 'date-fns';
+import TaskEntity from './task.entity';
+import TaskExecutionEntity from './taskExecution.entity';
+import { ITaskService, ITASK_TYPE, ITaskView } from './task.service.type';
 
-export type TASK_TYPE = "IMMEDIATE" | "FUTURE" | "DAILY" | "WEEKLY";
-
-export const taskTypes: TASK_TYPE[] = [
-  "IMMEDIATE",
-  "FUTURE",
-  "DAILY",
-  "WEEKLY",
+export const taskTypes: ITASK_TYPE[] = [
+  'IMMEDIATE',
+  'FUTURE',
+  'DAILY',
+  'WEEKLY',
 ];
 
 export const MILLISECONDS_IN_A_DAY = 1000 * 2;
 export const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
 
-class TaskService {
+class TaskService implements ITaskService {
   constructor() {
     this.initializePolling();
   }
@@ -25,9 +24,9 @@ class TaskService {
 
   executeDueTasks = async () => {
     const executionsDue = await TaskExecutionEntity.query()
-      .where("executeOn", "<", new Date().toISOString())
-      .andWhere("done", false)
-      .withGraphFetched("task")
+      .where('executeOn', '<', new Date().toISOString())
+      .andWhere('done', false)
+      .withGraphFetched('task')
       .execute();
 
     executionsDue.forEach(async (e) => {
@@ -40,12 +39,25 @@ class TaskService {
     this.cleanupExecutions(executionsDue.map((e) => e.id));
   };
 
-  getAllTasks = () => {
-    return TaskEntity.query().execute();
+  getNextExecution = (id: TaskEntity['id']) => {
+    return TaskExecutionEntity.query().findOne('taskId', id).where('done', false).execute();
   };
 
-  getTaskById = (id: number) => {
-    return TaskEntity.query().findById(id).execute();
+  getAllTasks = async () => {
+    const tasks = await TaskEntity
+      .query()
+      .withGraphJoined('executions')
+      .where('executions.done', false)
+      .execute();
+    const serializedTasks: ITaskView[] = tasks.map(t =>
+      ({ id: t.id, nextExecutionDate: new Date(t.executions[0].executeOn) }));
+    return serializedTasks;
+  };
+
+  getTaskById = async (id: number) => {
+    const task = await TaskEntity.query().findById(id).execute();
+    const nextExecution = await this.getNextExecution(task.id);
+    return { id: task.id, nextExecutionDate: new Date(nextExecution.executeOn) };
   };
 
   addRecurringTask = (execution: TaskExecutionEntity) => {
@@ -62,21 +74,21 @@ class TaskService {
     this.addTaskExecution(execution.taskId, nextExecution);
   };
 
-  addTaskExecution = (taskId: TaskEntity["id"], executeOn: Date) => {
+  addTaskExecution = (taskId: TaskEntity['id'], executeOn: Date) => {
     TaskExecutionEntity.query()
       .insert({ taskId, executeOn: executeOn.toISOString() })
       .execute();
   };
 
-  addTask = (type: TASK_TYPE, date?: Date) => {
+  addTask = async (type: ITASK_TYPE, date?: Date) => {
     const repeatAfter =
-      type === "DAILY"
+      type === 'DAILY'
         ? MILLISECONDS_IN_A_DAY
-        : type === "WEEKLY"
-        ? MILLISECONDS_IN_A_WEEK
-        : null;
+        : type === 'WEEKLY'
+          ? MILLISECONDS_IN_A_WEEK
+          : null;
     const executeOn = date ? date.toISOString() : new Date().toISOString();
-    return TaskEntity.query().insertGraph({
+    const task = await TaskEntity.query().insertGraph({
       repeatAfter,
       executions: [
         {
@@ -84,21 +96,28 @@ class TaskService {
         },
       ],
     });
+    return { id: task.id, nextExecutionDate: new Date(executeOn) };
   };
 
   executeTask = (task: TaskEntity) => {
     console.log(`Task with id #${task.id} executed`);
   };
 
-  cleanupExecutions = (ids: TaskExecutionEntity["id"][]) => {
+  cleanupExecutions = (ids: TaskExecutionEntity['id'][]) => {
     TaskExecutionEntity.query()
-      .whereIn("id", ids)
+      .whereIn('id', ids)
       .patch({ done: true })
       .execute();
   };
 
   removeTask = (id: number) => {
-    return TaskExecutionEntity.query().delete().where("done", false).execute();
+    return TaskExecutionEntity
+      .query()
+      .delete()
+      .where('done', false)
+      .andWhere('taskId', id)
+      .execute()
+      .then(n => n === 0 ? false : true);
   };
 }
 
