@@ -56,6 +56,7 @@ class TaskService implements ITaskService {
 
   getTaskById = async (id: number) => {
     const task = await TaskEntity.query().findById(id).execute();
+    if (!task) return null;
     const nextExecution = await this.getNextExecution(task.id);
     return { id: task.id, nextExecutionDate: new Date(nextExecution.executeOn) };
   };
