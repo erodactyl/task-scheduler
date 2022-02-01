@@ -3,31 +3,40 @@ import {
   MILLISECONDS_IN_A_DAY,
   MILLISECONDS_IN_A_WEEK,
 } from './task.service';
-import {ITASK_TYPE} from './task.service.type';
+import { ITASK_TYPE, ITaskService } from './task.service.type';
 
 interface FutureTask {
   id: number;
+  nextExecutionDate: Date;
   timeout: ReturnType<typeof setTimeout>;
   type: 'FUTURE';
 }
 
-class EphemeralTaskService {
+class EphemeralTaskService implements ITaskService {
   tasks: Record<FutureTask['id'], FutureTask> = {};
 
+  serializeTask = (task: FutureTask) => {
+    return { id: task.id, nextExecutionDate: task.nextExecutionDate };
+  };
+
   getAllTasks = () => {
-    return this.tasks;
+    return Promise.resolve(
+      Object.values(this.tasks).map(this.serializeTask)
+    );
   };
 
   getTaskById = (id: number) => {
-    return this.tasks[id];
+    const task = this.tasks[id];
+    if (!task) return Promise.resolve(null);
+    return Promise.resolve(this.serializeTask(this.tasks[id]));
   };
 
   removeTask = (id: number) => {
     const task = this.tasks[id];
-    if (!task) return 0;
+    if (!task) return Promise.resolve(false);
     clearTimeout(task.timeout);
     delete this.tasks[id];
-    return 1;
+    return Promise.resolve(true);
   };
 
   addTask = (type: ITASK_TYPE, date?: Date) => {
@@ -40,12 +49,12 @@ class EphemeralTaskService {
           : null;
     if (type === 'IMMEDIATE') {
       this.executeTask(id);
-      return { id };
+      return Promise.resolve({ id });
     } else {
       const timeout = this.queueFutureTask(id, date, repeatAfter);
-      const task: FutureTask = { id, type: 'FUTURE', timeout };
+      const task: FutureTask = { id, type: 'FUTURE', timeout, nextExecutionDate: date };
       this.tasks[task.id] = task;
-      return { id: task.id };
+      return Promise.resolve({ id: task.id, nextExecutionDate: task.nextExecutionDate });
     }
   };
 
@@ -54,9 +63,11 @@ class EphemeralTaskService {
       this.executeTask(id);
       // Used for recurring tasks
       if (repeatAfter) {
+        const date = addMilliseconds(new Date(), repeatAfter);
+        this.tasks[id].nextExecutionDate = date;
         this.tasks[id].timeout = this.queueFutureTask(
           id,
-          addMilliseconds(new Date(), repeatAfter),
+          date,
           repeatAfter
         );
       } else {
