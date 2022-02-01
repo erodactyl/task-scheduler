@@ -15,7 +15,7 @@ export const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
 
 class TaskService implements ITaskService {
   constructor() {
-    // this.initializePolling();
+    this.initializePolling();
   }
 
   initializePolling = () => {

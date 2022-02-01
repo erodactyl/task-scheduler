@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import { NotFound } from '../utils/errors.js';
 import { taskTypes } from './task.service.js';
 import validate from '../utils/validate';
-import TaskService from './epheremeralTask.service';
+import TaskService from './task.service';
 
 const taskRouter = Router();
 
