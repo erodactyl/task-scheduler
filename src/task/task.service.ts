@@ -10,7 +10,7 @@ export const taskTypes: ITASK_TYPE[] = [
   'WEEKLY',
 ];
 
-export const MILLISECONDS_IN_A_DAY = 1000 * 2;
+export const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24;
 export const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
 
 class TaskService implements ITaskService {
