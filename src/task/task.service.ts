@@ -1,7 +1,8 @@
 import { addMilliseconds, parseISO, isBefore } from 'date-fns';
 import TaskEntity from './task.entity';
 import TaskExecutionEntity from './taskExecution.entity';
-import { ITaskService, ITASK_TYPE, ITaskView } from './task.service.type';
+import { ITaskService, ITASK_TYPE, ITaskView,
+  MILLISECONDS_IN_A_DAY, MILLISECONDS_IN_A_WEEK } from './task.service.type';
 
 export const taskTypes: ITASK_TYPE[] = [
   'IMMEDIATE',
@@ -9,9 +10,6 @@ export const taskTypes: ITASK_TYPE[] = [
   'DAILY',
   'WEEKLY',
 ];
-
-export const MILLISECONDS_IN_A_DAY = 1000 * 60 * 60 * 24;
-export const MILLISECONDS_IN_A_WEEK = MILLISECONDS_IN_A_DAY * 7;
 
 class TaskService implements ITaskService {
   constructor() {
@@ -50,7 +48,7 @@ class TaskService implements ITaskService {
       .where('executions.done', false)
       .execute();
     const serializedTasks: ITaskView[] = tasks.map(t =>
-      ({ id: t.id, nextExecutionDate: new Date(t.executions[0].executeOn) }));
+      ({ id: t.id, nextExecutionDate: new Date(t.executions[0].executeOn), type: t.type }));
     return serializedTasks;
   };
 
@@ -58,7 +56,7 @@ class TaskService implements ITaskService {
     const task = await TaskEntity.query().findById(id).execute();
     if (!task) return null;
     const nextExecution = await this.getNextExecution(task.id);
-    return { id: task.id, nextExecutionDate: new Date(nextExecution.executeOn) };
+    return { id: task.id, nextExecutionDate: new Date(nextExecution.executeOn), type: task.type };
   };
 
   addRecurringTask = (execution: TaskExecutionEntity) => {
@@ -91,13 +89,14 @@ class TaskService implements ITaskService {
     const executeOn = date ? date.toISOString() : new Date().toISOString();
     const task = await TaskEntity.query().insertGraph({
       repeatAfter,
+      type,
       executions: [
         {
           executeOn,
         },
       ],
     });
-    return { id: task.id, nextExecutionDate: new Date(executeOn) };
+    return { id: task.id, nextExecutionDate: new Date(executeOn), type: task.type };
   };
 
   executeTask = (task: TaskEntity) => {

@@ -1,16 +1,18 @@
 import { Model } from 'objection';
+import { ITASK_TYPE } from './task.service.type';
 import TaskExecutionEntity from './taskExecution.entity';
 
 export default class TaskEntity extends Model {
   id!: number;
   repeatAfter!: number;
+  type!: ITASK_TYPE;
 
   executions: TaskExecutionEntity[];
 
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['repeatAfter'],
+      required: ['repeatAfter', 'type'],
     };
   }
 

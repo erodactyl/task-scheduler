@@ -1,22 +1,19 @@
 import { addMilliseconds } from 'date-fns';
-import {
-  MILLISECONDS_IN_A_DAY,
-  MILLISECONDS_IN_A_WEEK,
-} from './task.service';
-import { ITASK_TYPE, ITaskService } from './task.service.type';
+import { ITASK_TYPE, ITaskService,
+  MILLISECONDS_IN_A_DAY, MILLISECONDS_IN_A_WEEK, } from './task.service.type';
 
 interface FutureTask {
   id: number;
   nextExecutionDate: Date;
   timeout: ReturnType<typeof setTimeout>;
-  type: 'FUTURE';
+  type: ITASK_TYPE;
 }
 
 class EphemeralTaskService implements ITaskService {
   tasks: Record<FutureTask['id'], FutureTask> = {};
 
   serializeTask = (task: FutureTask) => {
-    return { id: task.id, nextExecutionDate: task.nextExecutionDate };
+    return { id: task.id, nextExecutionDate: task.nextExecutionDate, type: task.type };
   };
 
   getAllTasks = () => {
@@ -49,12 +46,12 @@ class EphemeralTaskService implements ITaskService {
           : null;
     if (type === 'IMMEDIATE') {
       this.executeTask(id);
-      return Promise.resolve({ id });
+      return Promise.resolve({ id, type: 'IMMEDIATE' as const });
     } else {
       const timeout = this.queueFutureTask(id, date, repeatAfter);
-      const task: FutureTask = { id, type: 'FUTURE', timeout, nextExecutionDate: date };
+      const task: FutureTask = { id, type, timeout, nextExecutionDate: date };
       this.tasks[task.id] = task;
-      return Promise.resolve({ id: task.id, nextExecutionDate: task.nextExecutionDate });
+      return Promise.resolve({ id: task.id, type, nextExecutionDate: task.nextExecutionDate });
     }
   };
 
